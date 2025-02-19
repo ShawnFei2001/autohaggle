@@ -3,6 +3,18 @@ import pandas as pd
 import numpy as np
 from multiprocessing import Pool, cpu_count
 
+# CPI data
+cpi_data = {
+    1980: 82.4, 1981: 90.9, 1982: 96.5, 1983: 99.6, 1984: 103.9, 1985: 107.6,
+    1986: 109.6, 1987: 113.6, 1988: 118.3, 1989: 124.0, 1990: 130.7, 1991: 136.2,
+    1992: 140.3, 1993: 144.5, 1994: 148.2, 1995: 152.4, 1996: 156.9, 1997: 160.5,
+    1998: 163.0, 1999: 166.6, 2000: 172.2, 2001: 177.1, 2002: 179.9, 2003: 184.0,
+    2004: 188.9, 2005: 195.3, 2006: 201.6, 2007: 207.3, 2008: 215.3, 2009: 214.5,
+    2010: 218.1, 2011: 224.9, 2012: 229.6, 2013: 233.0, 2014: 236.7, 2015: 237.0,
+    2016: 240.0, 2017: 245.1, 2018: 251.1, 2019: 255.7, 2020: 258.8, 2021: 270.9,
+    2022: 292.0, 2023: 306.8, 2024: 315.6
+}
+
 # Download latest version
 path = kagglehub.dataset_download("syedanwarafridi/vehicle-sales-data")
 path2 = kagglehub.dataset_download("tsaustin/us-used-car-sales-data")
@@ -20,6 +32,8 @@ print("DATA LOADED")
 df1["sale_year"] = df1["saledate"].str.extract(r'(\d{4})').astype(float).astype("Int64")
 
 # Preprocessing
+
+# Drop Columns
 df1 = df1.drop(columns=['body', 'transmission', 'vin', 'seller', "saledate"])
 df2 = df2.drop(columns=['Engine', 'BodyType', 'NumCylinders', 'DriveType', 'ID'])
 
@@ -45,11 +59,17 @@ df2 = df2.dropna(subset=['make', 'model', 'trim', 'sale_year', 'zipcode'])
 
 # Fill NA Values with Median
 df1['condition'] = df1['condition'].fillna(df1['condition'].median())
-df1['odometer'] = df1['odometer'].fillna(df1['odometer'].median())
+df1['odometer'] = df1['odometer'].fillna(df1['year'] * 10000) # assume 10000 miles per year 
 df1['mmr'] = df1['mmr'].fillna(df1['mmr'].median())
 
+# MALO FILL DF2 MISSING VALUES HERE FROM NOTES ONCE DONE WITH THAT WE CAN UNCOMMENT MERGE DATAFRAMES BELOW
+# STATE CORRECTION HERE AS WELL 
+
 # Merge DataFrames
-# merged_df = pd.concat([df1, df2], ignore_index=True)
+merged_df = pd.concat([df1, df2], ignore_index=True)
+
+# Convert sale_price to 2024 dollars
+
 
 # Summaries
 # missing_summary_df1 = pd.DataFrame({
@@ -65,20 +85,10 @@ df1['mmr'] = df1['mmr'].fillna(df1['mmr'].median())
 # })
 # print(missing_summary_df2)
 
-# Ensure saledate is a datetime object
 
 
-# CPI data
-cpi_data = {
-    1980: 82.4, 1981: 90.9, 1982: 96.5, 1983: 99.6, 1984: 103.9, 1985: 107.6,
-    1986: 109.6, 1987: 113.6, 1988: 118.3, 1989: 124.0, 1990: 130.7, 1991: 136.2,
-    1992: 140.3, 1993: 144.5, 1994: 148.2, 1995: 152.4, 1996: 156.9, 1997: 160.5,
-    1998: 163.0, 1999: 166.6, 2000: 172.2, 2001: 177.1, 2002: 179.9, 2003: 184.0,
-    2004: 188.9, 2005: 195.3, 2006: 201.6, 2007: 207.3, 2008: 215.3, 2009: 214.5,
-    2010: 218.1, 2011: 224.9, 2012: 229.6, 2013: 233.0, 2014: 236.7, 2015: 237.0,
-    2016: 240.0, 2017: 245.1, 2018: 251.1, 2019: 255.7, 2020: 258.8, 2021: 270.9,
-    2022: 292.0, 2023: 306.8, 2024: 315.6
-}
+# SHAWN FILL IN ROW ADJUSTED INFLATION HERE 
+
 
 # Convert CPI data to a DataFrame
 cpi_df = pd.DataFrame(list(cpi_data.items()), columns=['cpi_year', 'cpi'])
