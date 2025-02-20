@@ -2,6 +2,10 @@ import kagglehub
 import pandas as pd
 import numpy as np
 from multiprocessing import Pool, cpu_count
+import re
+from uszipcode import SearchEngine
+
+#!pip install "sqlalchemy_mate<2.0.0" USE THIS VERSION TO AVOID IMPORT ERRORS FROM USZIPCODE
 
 # CPI data
 cpi_data = {
@@ -58,11 +62,9 @@ df2.rename(columns={
 
 # Replace Missing Values
 df1 = df1.replace([" ", "NA", "na", "--", "null"], pd.NA)
-df2 = df2.replace([" ", "NA", "na", "--", "null"], pd.NA)
 
 # Drop Unfillable NA Values
 df1 = df1.dropna(subset=['make', 'model', 'trim', 'color', 'interior', 'sale_year'])
-df2 = df2.dropna(subset=['make', 'model', 'trim', 'sale_year', 'zipcode'])
 
 # Fill NA Values with Median
 df1['condition'] = df1['condition'].fillna(df1['condition'].median())
@@ -71,6 +73,33 @@ df1['mmr'] = df1['mmr'].fillna(df1['mmr'].median())
 
 # MALO FILL DF2 MISSING VALUES HERE FROM NOTES ONCE DONE WITH THAT WE CAN UNCOMMENT MERGE DATAFRAMES BELOW
 # STATE CORRECTION HERE AS WELL 
+search = SearchEngine()
+def get_state(zipcode):
+    zipcode_str = str(zipcode).strip()
+
+    # Full zipcode: exactly 5 digits
+    if re.fullmatch(r'\d{5}', zipcode_str):
+        result = search.by_zipcode(zipcode_str)
+        if result and result.state:
+            return result.state
+        else:
+            return "Unknown"
+    # Partial zipcode: 3 digits followed by two asterisks, e.g., "940**"
+    elif re.fullmatch(r'\d{3}\*\*', zipcode_str):
+        prefix = zipcode_str[:3]
+        # Query for any zipcode that starts with the prefix
+        results = search.query(prefix + "*", returns=1)
+        if results and results[0].state:
+            return results[0].state
+        else:
+            return "Unknown"
+    else:
+        # For any other format, return "Unknown"
+        return "Unknown"
+df2['state'] = df2['zipcode'].apply(get_state)
+df2['trim'] = df2['trim'].fillna("Unknown")
+# Replace empty strings (or strings with just spaces) with "unknown"
+df2.loc[df2['trim'].str.strip() == "", 'trim'] = "Unknown"
 
 # Merge DataFrames
 merged_df = pd.concat([df1, df2], ignore_index=True)
