@@ -101,12 +101,17 @@ df2['trim'] = df2['trim'].fillna("Unknown")
 # Replace empty strings (or strings with just spaces) with "unknown"
 df2.loc[df2['trim'].str.strip() == "", 'trim'] = "Unknown"
 
-# Merge DataFrames
+# Merge DataFrames and Save to CSV
 merged_df = pd.concat([df1, df2], ignore_index=True)
+
+# SAVE TO CSV DO NOT COMMIT DATASETS 
+# merged_df.to_csv("merged_data.csv", index= False)
 
 # Convert sale_price to 2024 dollars
 merged_df["2024_price"] = merged_df["sellingprice"] * (cpi_data[2024] / merged_df["sale_year"].map(cpi_data))
 
+# Save to CSV
+# merged_df.to_csv("merged_data_2024_column.csv", index= False)
 
 # Summaries
 # missing_summary_df1 = pd.DataFrame({
@@ -185,9 +190,8 @@ if __name__ == '__main__':
     # Format the saledate
     extended_df['saledate'] = pd.to_datetime(extended_df['saledate']).dt.strftime('%m/%d/%Y')
 
-
-
-
+    # Save the extended DataFrame to a CSV file
+    # extended_df.to_csv("extended_data.csv", index= False)
 
 
 
