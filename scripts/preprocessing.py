@@ -110,7 +110,7 @@ still missing values in model, condition, mmr, interior, color
 # Merge DataFrames and Save to CSV
 merged_df = pd.concat([df1, df2], ignore_index=True)
 
-merged_df.dropna(subset= ["model", "2024_price"], inplace= True)
+merged_df.dropna(subset= ["model"], inplace= True)
 merged_df['condition'] = merged_df['condition'].fillna(merged_df['condition'].median())
 merged_df['mmr'] = merged_df['mmr'].fillna(merged_df['mmr'].median())
 merged_df["color"] = merged_df["color"].fillna(merged_df["color"].mode()[0])
@@ -121,6 +121,8 @@ merged_df.to_csv("merged_data.csv", index= False)
 
 # Convert sale_price to 2024 dollars
 merged_df["2024_price"] = merged_df["sellingprice"] * (cpi_data[2024] / merged_df["sale_year"].map(cpi_data))
+
+merged_df.dropna(subset= ["2024_price"], inplace= True)
 
 # Save to CSV
 merged_df.to_csv("merged_data_2024_column.csv", index= False)
