@@ -98,20 +98,32 @@ def get_state(zipcode):
         return "Unknown"
 df2['state'] = df2['zipcode'].apply(get_state)
 df2['trim'] = df2['trim'].fillna("Unknown")
+
+
 # Replace empty strings (or strings with just spaces) with "unknown"
 df2.loc[df2['trim'].str.strip() == "", 'trim'] = "Unknown"
+
+"""
+still missing values in model, condition, mmr, interior, color
+"""
 
 # Merge DataFrames and Save to CSV
 merged_df = pd.concat([df1, df2], ignore_index=True)
 
+merged_df.dropna(subset= ["model", "2024_price"], inplace= True)
+merged_df['condition'] = merged_df['condition'].fillna(merged_df['condition'].median())
+merged_df['mmr'] = merged_df['mmr'].fillna(merged_df['mmr'].median())
+merged_df["color"] = merged_df["color"].fillna(merged_df["color"].mode()[0])
+merged_df["interior"] = merged_df["interior"].fillna(merged_df["interior"].mode()[0])
+
 # SAVE TO CSV DO NOT COMMIT DATASETS 
-# merged_df.to_csv("merged_data.csv", index= False)
+merged_df.to_csv("merged_data.csv", index= False)
 
 # Convert sale_price to 2024 dollars
 merged_df["2024_price"] = merged_df["sellingprice"] * (cpi_data[2024] / merged_df["sale_year"].map(cpi_data))
 
 # Save to CSV
-# merged_df.to_csv("merged_data_2024_column.csv", index= False)
+merged_df.to_csv("merged_data_2024_column.csv", index= False)
 
 # Summaries
 # missing_summary_df1 = pd.DataFrame({
@@ -191,7 +203,7 @@ if __name__ == '__main__':
     extended_df['saledate'] = pd.to_datetime(extended_df['saledate']).dt.strftime('%m/%d/%Y')
 
     # Save the extended DataFrame to a CSV file
-    # extended_df.to_csv("extended_data.csv", index= False)
+    extended_df.to_csv("extended_data.csv", index= False)
 
 
 
