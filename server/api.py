@@ -7,8 +7,8 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Load the trained model (Joblib instead of Pickle)
-model = joblib.load("model.joblib")
+# Load the trained model
+model = joblib.load("model.pkl")
 
 # Define input data format
 class InputData(BaseModel):
