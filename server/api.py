@@ -8,7 +8,7 @@ from pydantic import BaseModel
 app = FastAPI()
 
 # Load the trained model
-model = joblib.load("model.pkl")
+model = joblib.load("model.joblib")
 
 # Define input data format
 class InputData(BaseModel):
