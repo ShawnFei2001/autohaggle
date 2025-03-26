@@ -1,55 +1,76 @@
-import os
-import uvicorn
-import joblib
-import numpy as np
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import logging
-
-# Initialize logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+import pandas as pd
+import numpy as np
+import joblib
+import os
 
 app = FastAPI()
 
-# Load model with error handling
-try:
-    model = joblib.load("model.joblib")
-    logger.info("Model loaded successfully")
-except Exception as e:
-    logger.error(f"Model loading failed: {str(e)}")
-    raise RuntimeError("Failed to load model") from e
+# === Load Clustering Models ===
+kmeans = joblib.load("kmeans_model.joblib")
+scaler_for_clustering = joblib.load("scaler_for_clustering.joblib")
 
-class InputData(BaseModel):
-    features: list[float]
+# === Column Definitions ===
+categorical_cols = ['make', 'model', 'trim', 'state', 'color', 'interior']
+numerical_cols = ['year', 'condition', 'odometer', 'mmr',
+                  'age', 'odometer_per_year', 'mmr_odometer_ratio', 'year_condition_interaction']
+cluster_features = ['year', 'condition', 'odometer', 'mmr']
 
-@app.get("/")
-def home():
-    return {"message": "FastAPI Model API is running!"}
+# === Input Schema ===
+class CarInput(BaseModel):
+    year: int
+    make: str
+    model: str
+    trim: str
+    state: str
+    condition: int
+    odometer: int
+    color: str
+    interior: str
+    mmr: int
 
+# === Feature Engineering ===
+def add_interaction_features(df):
+    df["age"] = 2024 - df["year"]
+    df["odometer_per_year"] = df["odometer"] / (df["age"] + 1e-3)
+    df["mmr_odometer_ratio"] = df["mmr"] / (df["odometer"] + 1e-3)
+    df["year_condition_interaction"] = df["year"] * df["condition"]
+    return df
+
+# === Prediction Endpoint ===
 @app.post("/predict")
-def predict(data: InputData):
+def predict(car: CarInput):
     try:
-        # Validate input length
-        expected_features = 8  # Update this with your actual feature count
-        if len(data.features) != expected_features:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Expected {expected_features} features, got {len(data.features)}"
-            )
-        
-        # Convert to numpy array and reshape
-        X_input = np.array(data.features).reshape(1, -1)
-        logger.info(f"Input shape: {X_input.shape}")
-        
-        # Make prediction
-        prediction = model.predict(X_input)
-        return {"prediction": prediction.tolist()}
-        
-    except Exception as e:
-        logger.error(f"Prediction failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        car_df = pd.DataFrame([car.dict()])
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+        # Cluster prediction
+        cluster_input = car_df[cluster_features]
+        cluster_scaled = scaler_for_clustering.transform(cluster_input)
+        cluster = kmeans.predict(cluster_scaled)[0]
+
+        # Feature engineering
+        car_df = add_interaction_features(car_df)
+
+        # Load preprocessors & model
+        label_encoders = joblib.load(f"models_by_cluster/label_encoders_cluster_{cluster}.joblib")
+        scaler = joblib.load(f"models_by_cluster/scaler_cluster_{cluster}.joblib")
+        model = joblib.load(f"models_by_cluster/lightgbm_model_cluster_{cluster}.joblib")['model']
+
+        for col in categorical_cols:
+            car_df[col] = label_encoders[col].transform(car_df[col].astype(str))
+
+        X_cat = car_df[categorical_cols].values
+        X_num = scaler.transform(car_df[numerical_cols])
+        X_input = np.hstack((X_cat, X_num)).astype(np.float32)
+
+        y_log_pred = model.predict(X_input)
+        y_pred = np.expm1(y_log_pred)
+
+        return {
+            "cluster": int(cluster),
+            "predicted_price": float(round(y_pred[0], 2))
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
