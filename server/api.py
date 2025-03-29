@@ -43,7 +43,7 @@ def add_interaction_features(df):
 def predict(car: CarInput):
     try:
         car_df = pd.DataFrame([car.dict()])
-
+        print("Received DataFrame:", car_df)
         # Cluster prediction
         cluster_input = car_df[cluster_features]
         cluster_scaled = scaler_for_clustering.transform(cluster_input)
