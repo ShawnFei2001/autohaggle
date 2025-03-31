@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
@@ -16,6 +17,15 @@ categorical_cols = ['make', 'model', 'trim', 'state', 'color', 'interior']
 numerical_cols = ['year', 'condition', 'odometer', 'mmr',
                   'age', 'odometer_per_year', 'mmr_odometer_ratio', 'year_condition_interaction']
 cluster_features = ['year', 'condition', 'odometer', 'mmr']
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or specify your frontend URL(s) for better security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # === Input Schema ===
 class CarInput(BaseModel):

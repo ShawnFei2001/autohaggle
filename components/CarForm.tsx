@@ -36,13 +36,13 @@ export default function CarForm() {
         mmr: Number(formData.mmr)
       };
 
-      const response = await fetch("/predict", {
+      const response = await fetch("https://autohaggleapi.onrender.com/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
-      });
+      });      
 
       if (!response.ok) {
         throw new Error("Failed to fetch prediction");
