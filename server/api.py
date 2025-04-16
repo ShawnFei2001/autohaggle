@@ -20,7 +20,7 @@ cluster_features = ['year', 'condition', 'odometer', 'mmr']
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend URL(s) for better security
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

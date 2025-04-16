@@ -5,6 +5,20 @@
 
 ---
 
+## Structure of this project
+
+### Data Processing, Model Exploration and Final Model development
+- **./scripts**
+
+### Frontend
+- **./app**
+- **./components**
+- **./lib**
+- **./public**
+
+### Backend
+- **./server**
+
 ## How AutoHaggle Works
 
 ### 1. Create a New Deal with Dream Car Parameters
@@ -45,7 +59,6 @@ After purchasing a car, users can **share their final dealer quote** with the co
 ### **Machine Learning & AI Models**
 - **Price Prediction** – Hybrid model using clustering and model selection.
 - **Quote Matching** – Clustering algorithms to group similar dealer offers.
-- **Negotiation Assistance** *(Coming Soon)* – LLMs analyzing quotes and providing negotiation strategies.
 
 ### **Backend & Data Processing**
 - **Python & TensorFlow** – Powering price predictions and negotiation analysis.
